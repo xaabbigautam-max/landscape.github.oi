@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1b5e20">
+</head>
+<body class="welcome">
+    <div class="container">
+        <div class="card">
+            <h1><i class="fas fa-leaf"></i> Landscaping</h1>
+            <p class="subtitle">Professional Task Management System</p>
+            
+            <div class="buttons">
+                <a href="team.html" class="btn team">
+                    <i class="fas fa-users"></i> Team Login
+                </a>
+                <a href="admin.html" class="btn admin">
+                    <i class="fas fa-user-shield"></i> Admin Login
+                </a>
+            </div>
+            
+            <div class="info-box">
+                <p><i class="fas fa-info-circle"></i> Realtime task updates • Photo uploads • Progress tracking</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">Accessible on all devices - Mobile, Tablet, Desktop</p>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; background: #f1f8e9; border-radius: 10px;">
+                <h4 style="color: #1b5e20; margin-bottom: 10px;"><i class="fas fa-key"></i> Login Information</h4>
+                <div style="font-size: 0.9rem;">
+                    <p><strong>Team Members:</strong> Use your registered email and password</p>
+                    <p><strong>Admins:</strong> Use admin credentials provided</p>
+                    <p style="margin-top: 10px; font-size: 0.85rem; color: #666;">
+                        <i class="fas fa-exclamation-circle"></i> Each user has individual login credentials
+                    </p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 10px;">
+                <h4 style="color: #e65100; margin-bottom: 10px;"><i class="fas fa-mobile-alt"></i> Mobile Access</h4>
+                <p style="font-size: 0.9rem;">
+                    This app works on all devices. You can add it to your home screen for quick access.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('Service Worker Registration Failed:', err));
+        }
+    </script>
+</body>
+</html>

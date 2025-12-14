@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "tasks": {
+      ".read": true,  // Allow everyone to read tasks
+      ".write": "auth != null",  // Only authenticated users can write
+      ".indexOn": ["status", "requested_by", "assigned_to", "is_urgent", "is_visible_to_all"]
+    },
+    "logs": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}

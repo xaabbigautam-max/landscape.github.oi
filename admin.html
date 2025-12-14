@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin • Greenfield Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <!-- Excel library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm" class="card">
+            <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
+            <p class="subtitle">Administrator access only</p>
+            
+            <div class="form-group">
+                <label>Admin Email</label>
+                <input type="email" id="adminEmail" placeholder="admin@greenfield.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="adminPassword" placeholder="Enter your password" required>
+                    <button type="button" onclick="togglePassword('adminPassword')" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                   background: none; border: none; color: #666; cursor: pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="handleAdminLogin()" class="btn login">
+                <i class="fas fa-sign-in-alt"></i> LOGIN AS ADMIN
+            </button>
+            
+            <!-- Debug button -->
+            <!---button onclick="debugLoginTest()" class="btn small" style="background: #ff9800; color: white; margin-top: 10px;"--->
+                <!---i class="fas fa-bug"----> Quick Test Login
+            
+            
+            <div class="info-box">
+                <p><i class="fas fa-info-circle"></i> Admin Credentials:</p>
+                <p style="font-size: 0.9rem; margin-top: 5px;">
+                    admin@greenfield.com / Landscape2025<br>
+                    <!---a href="javascript:void(0)" onclick="showAllCredentials()" 
+                       style="color: #1b5e20; text-decoration: underline;">
+                        <i class="fas fa-key"></i> View All Credentials--->
+                    
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="index.html" class="btn small">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="hidden">
+            <div class="header">
+                <div>
+                    <h3><i class="fas fa-crown"></i> Admin Dashboard</h3>
+                    <p style="color: #666; font-size: 0.9rem;">Welcome, <span id="adminName">Admin</span></p>
+                </div>
+                <div>
+                    <button onclick="exportToExcel()" class="btn small blue">
+                        <i class="fas fa-file-excel"></i> Export All
+                    </button>
+                    <button onclick="showStatsModal()" class="btn small">
+                        <i class="fas fa-chart-bar"></i> Stats
+                    </button>
+                    <button onclick="logout()" class="btn small red">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card">
+                <h3><i class="fas fa-chart-line"></i> Quick Overview</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div style="text-align: center; padding: 15px; background: #f1f8e9; border-radius: 10px;">
+                        <h4 style="color: #1b5e20;" id="totalTasks">0</h4>
+                        <p>Total Tasks</p>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #fff3e0; border-radius: 10px;">
+                        <h4 style="color: #e65100;" id="pendingTasks">0</h4>
+                        <p>Pending</p>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #e8f5e8; border-radius: 10px;">
+                        <h4 style="color: #2e7d32;" id="approvedTasks">0</h4>
+                        <p>Approved</p>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 10px;">
+                        <h4 style="color: #1565c0;" id="completedTasks">0</h4>
+                        <p>Completed</p>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #fff8e1; border-radius: 10px;">
+                        <h4 style="color: #ff9800;" id="needsApprovalTasks">0</h4>
+                        <p>Needs Approval</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs for Admin Features -->
+            <div class="tabs">
+                <button class="tab-btn" onclick="openTab('approvalTab')">
+                    <i class="fas fa-check-circle"></i> Approve Tasks
+                </button>
+                <button class="tab-btn" onclick="openTab('createTaskTab')">
+                    <i class="fas fa-plus-circle"></i> Create Task
+                </button>
+                <button class="tab-btn" onclick="openTab('assignTaskTab')">
+                    <i class="fas fa-user-tie"></i> Assign Task
+                </button>
+                <button class="tab-btn" onclick="openTab('urgentTaskTab')">
+                    <i class="fas fa-exclamation-triangle"></i> Urgent Task
+                </button>
+                <button class="tab-btn" onclick="openTab('teamManagementTab')">
+                    <i class="fas fa-users-cog"></i> Manage Team
+                </button>
+            </div>
+
+            <!-- Tab 1: Task Approval -->
+            <div id="approvalTab" class="tab-content active">
+                <div class="card">
+                    <h3><i class="fas fa-check-circle"></i> Pending Approvals (<span id="approvalCount">0</span>)</h3>
+                    <p class="subtitle">Review and approve tasks submitted by team members</p>
+                    
+                    <div class="urgent-alert" style="background: #fff3e0; border-color: #ff9800;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Tasks need admin approval before being visible to all team members</span>
+                    </div>
+                    
+                    <div id="approvalTaskList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading tasks for approval...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Create Task (Admin Request Form) -->
+            <div id="createTaskTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-plus-circle"></i> Create New Task Request</h3>
+                    <p class="subtitle">Submit a task request as an admin</p>
+                    
+                    <div class="form-group">
+                        <label>Task Title *</label>
+                        <input type="text" id="taskTitle" placeholder="Brief title for the task" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Task Description *</label>
+                        <textarea id="taskDescription" placeholder="Detailed description of the task..." rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Zone *</label>
+                            <select id="taskZone" required>
+                                <option value="">Select Zone</option>
+                                <option value="Main Villa">Main Villa</option>
+                                <option value="Main SPA">Main SPA</option>
+                                <option value="Mountain Villa">Mountain Villa</option>
+                                <option value="Entourage">Entourage</option>
+                                <option value="Pool House">Pool House</option>
+                                <option value="Gate 3">Gate 3</option>
+                                <option value="Golf Landscaping">Golf Landscaping</option>
+                                <option value="Areesh">Areesh</option>
+                                <option value="MUD 1">MUD 1</option>
+                                <option value="MUD 2">MUD 2</option>
+                                <option value="MUD 3">MUD 3</option>
+                                <option value="MUD 4">MUD 4</option>
+                                <option value="MUD 5">MUD 5</option>
+                                <option value="MUD 6">MUD 6</option>
+                                <option value="Paddle Court">Paddle Court</option>
+                                <option value="Gaming Building">GB</option>
+                                <option value="Indian Palace Front">Indian Palace Front</option>
+                                <option value="Indian Palace back">Indian Palace back</option>
+                                <option value="Royal Caravan">Royal Caravan</option>
+                                <option value="Cycle Track">Cycle Track</option>
+                                <option value="POD 1 Indoor">Pod 1 Indoor</option>
+                                <option value="POD 1 Out door">Pod 1 Outdoor</option>
+                                <option value="Royal Road">Royal Road</option>
+                                <option value="Gate 5">Gate 5</option>
+                                <option value="VIP Hotel">VIP H</option>
+                                <option value="Staff Canteen">SC Z1</option>
+                                <option value="Staff Canteen">SC Z2</option>
+                                <option value="Staff Canteen">SC Z3</option>
+                                <option value="Other">Other Area</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Priority Level</label>
+                            <select id="taskPriority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Estimated Hours</label>
+                        <input type="number" id="estimatedHours" placeholder="e.g., 2" min="0.5" step="0.5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Deadline (Optional)</label>
+                        <input type="date" id="taskDeadline">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-camera"></i> Attach Photos (Optional - Max 2MB each)
+                        </label>
+                        <input type="file" id="taskPhotos" accept="image/*" style="padding: 10px;">
+                        <div id="photosPreview" style="margin-top: 10px;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="additionalNotes" placeholder="Any special instructions or notes..." rows="2"></textarea>
+                    </div>
+                    
+                    <button onclick="submitAdminTaskRequest()" class="btn submit">
+                        <i class="fas fa-paper-plane"></i> SUBMIT TASK REQUEST
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 3: Assign Task to Team Member -->
+            <div id="assignTaskTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-user-tie"></i> Assign Task to Team</h3>
+                    <p class="subtitle">Assign existing or new task to specific team member</p>
+                    
+                    <div class="form-group">
+                        <label>Select Team Member *</label>
+                        <select id="assignToMember" required>
+                            <option value="">Select Team Member</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Task to Assign *</label>
+                        <select id="taskToAssign" required>
+                            <option value="">Select Task or Create New</option>
+                            <option value="new">Create New Task</option>
+                        </select>
+                    </div>
+                    
+                    <!-- New task form (shown when "Create New Task" is selected) -->
+                    <div id="newTaskForAssignment" class="hidden">
+                        <div class="form-group">
+                            <label>Task Description *</label>
+                            <textarea id="assignTaskDesc" placeholder="Task description..." rows="2" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Zone *</label>
+                            <select id="assignTaskZone" required>
+                                <option value="">Select Zone</option>
+                                <option value="Main Villa">Main Villa</option>
+                                <option value="Main SPA">Main SPA</option>
+                                <option value="Mountain Villa">Mountain Villa</option>
+                                <option value="Entourage">Entourage</option>
+                                <option value="Pool House">Pool House</option>
+                                <option value="Gate 3">Gate 3</option>
+                                <option value="Golf Landscaping">Golf Landscaping</option>
+                                <option value="Areesh">Areesh</option>
+                                <option value="MUD 1">MUD 1</option>
+                                <option value="MUD 2">MUD 2</option>
+                                <option value="MUD 3">MUD 3</option>
+                                <option value="MUD 4">MUD 4</option>
+                                <option value="MUD 5">MUD 5</option>
+                                <option value="MUD 6">MUD 6</option>
+                                <option value="Paddle Court">Paddle Court</option>
+                                <option value="Gaming Building">GB</option>
+                                <option value="Indian Palace Front">Indian Palace Front</option>
+                                <option value="Indian Palace back">Indian Palace back</option>
+                                <option value="Royal Caravan">Royal Caravan</option>
+                                <option value="Cycle Track">Cycle Track</option>
+                                <option value="POD 1 Indoor">Pod 1 Indoor</option>
+                                <option value="POD 1 Out door">Pod 1 Outdoor</option>
+                                <option value="Royal Road">Royal Road</option>
+                                <option value="Gate 5">Gate 5</option>
+                                <option value="VIP Hotel">VIP H</option>
+                                <option value="Staff Canteen">SC Z1</option>
+                                <option value="Staff Canteen">SC Z2</option>
+                                <option value="Staff Canteen">SC Z3</option>
+                                <option value="Other">Other Area</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Due Date (Optional)</label>
+                        <input type="date" id="assignmentDueDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <select id="assignmentPriority">
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="assignTaskToMember()" class="btn submit">
+                        <i class="fas fa-user-check"></i> ASSIGN TASK
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 4: Create Urgent Task -->
+            <div id="urgentTaskTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Urgent Task Request</h3>
+                    <p class="subtitle" style="color: #c62828;">For immediate attention tasks</p>
+                    
+                    <div class="urgent-alert">
+                        <i class="fas fa-bell"></i>
+                        <span>Urgent tasks will be highlighted in red and notified to all team members</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Urgent Task Title *</label>
+                        <input type="text" id="urgentTaskTitle" placeholder="e.g., Water Leak in Main Villa" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Issue Description *</label>
+                        <textarea id="urgentDescription" placeholder="Describe the urgent issue..." rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                       <div class="form-group">
+                            <label>Location *</label>
+                            <select id="urgentLocation" required>
+                                <option value="">Select Location</option>
+                                <option value="Main Villa">Main Villa</option>
+                                <option value="Main SPA">Main SPA</option>
+                                <option value="Mountain Villa">Mountain Villa</option>
+                                <option value="Entourage">Entourage</option>
+                                <option value="Pool House">Pool House</option>
+                                <option value="Gate 3">Gate 3</option>
+                                <option value="Golf Landscaping">Golf Landscaping</option>
+                                <option value="Areesh">Areesh</option>
+                                <option value="MUD 1">MUD 1</option>
+                                <option value="MUD 2">MUD 2</option>
+                                <option value="MUD 3">MUD 3</option>
+                                <option value="MUD 4">MUD 4</option>
+                                <option value="MUD 5">MUD 5</option>
+                                <option value="MUD 6">MUD 6</option>
+                                <option value="Paddle Court">Paddle Court</option>
+                                <option value="Gaming Building">GB</option>
+                                <option value="Indian Palace Front">Indian Palace Front</option>
+                                <option value="Indian Palace back">Indian Palace back</option>
+                                <option value="Royal Caravan">Royal Caravan</option>
+                                <option value="Cycle Track">Cycle Track</option>
+                                <option value="POD 1 Indoor">Pod 1 Indoor</option>
+                                <option value="POD 1 Out door">Pod 1 Outdoor</option>
+                                <option value="Royal Road">Royal Road</option>
+                                <option value="Gate 5">Gate 5</option>
+                                <option value="VIP Hotel">VIP H</option>
+                                <option value="Staff Canteen">SC Z1</option>
+                                <option value="Staff Canteen">SC Z2</option>
+                                <option value="Staff Canteen">SC Z3</option>
+                                <option value="Other">Other Area</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Required Response Time *</label>
+                            <select id="responseTime" required>
+                                <option value="1h">Within 1 Hour</option>
+                                <option value="2h">Within 2 Hours</option>
+                                <option value="4h">Within 4 Hours</option>
+                                <option value="today">Today</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Assign To (Optional)</label>
+                        <select id="urgentAssignTo">
+                            <option value="">Any Available Team Member</option>
+                            <option value="specific">Specific Member</option>
+                        </select>
+                        <div id="specificMemberContainer" class="hidden">
+                            <select id="specificMember" style="margin-top: 10px; width: 100%;">
+                                <option value="">Select Team Member</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Photos of Issue (Optional)</label>
+                        <input type="file" id="urgentPhotos" accept="image/*" style="padding: 10px;">
+                    </div>
+                    
+                    <button onclick="submitUrgentTask()" class="btn red">
+                        <i class="fas fa-bolt"></i> SUBMIT URGENT TASK
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 5: Team Management -->
+            <div id="teamManagementTab" class="tab-content">
+                <div class="card">
+                    <h3><i class="fas fa-users-cog"></i> Team Member Management</h3>
+                    <p class="subtitle">Add, edit, or remove team members</p>
+                    
+                    <div class="form-group">
+                        <label>Search Team Members</label>
+                        <input type="text" id="searchTeamMembers" placeholder="Search by name, email, or zone..." 
+                               onkeyup="searchTeamMembers()" style="width: 100%;">
+                    </div>
+                    
+                    <!-- Add New Team Member Form -->
+                    <div style="padding: 20px; background: #f1f8e9; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #1b5e20; margin-bottom: 15px;"><i class="fas fa-user-plus"></i> Add New Team Member</h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="newMemberName" placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label>Email *</label>
+                                <input type="email" id="newMemberEmail" placeholder="john@greenfield.com">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Password *</label>
+                                <div style="position: relative;">
+                                    <input type="text" id="newMemberPassword" placeholder="Create password">
+                                    <button type="button" onclick="generatePassword()" 
+                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                                   background: #4caf50; color: white; border: none; border-radius: 5px; 
+                                                   padding: 5px 10px; font-size: 12px; cursor: pointer;">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Department</label>
+                                <select id="newMemberDept">
+                                    <option value="">Select Department</option>
+                                    <option value="Landscaping">Landscaping</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Irrigation">Irrigation</option>
+                                    <option value="VIP Services">VIP Services</option>
+                                    <option value="Golf Course">Golf Course</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Assigned Zone</label>
+                            <input type="text" id="newMemberZone" placeholder="Main Villa, Garden, etc.">
+                        </div>
+                        
+                        <button onclick="addNewTeamMember()" class="btn submit">
+                            <i class="fas fa-save"></i> ADD TEAM MEMBER
+                        </button>
+                    </div>
+                    
+                    <!-- Team Members List -->
+                    <div id="teamMembersList">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading team members...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Tasks -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fas fa-list-alt"></i> All Tasks (<span id="taskCount">0</span>)</h3>
+                    <div>
+                        <select id="filterStatus" onchange="filterTasks()" style="width: auto; padding: 10px; margin-right: 10px;">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="needs_approval">Needs Approval</option>
+                        </select>
+                        <input type="text" id="adminSearch" placeholder="Search tasks..." 
+                               onkeyup="filterTasks()" style="width: auto; min-width: 250px;">
+                    </div>
+                </div>
+                
+                <div id="taskList">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-chart-pie"></i> Task Statistics</h3>
+                <button onclick="closeStatsModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="statsContent">
+                Loading statistics...
+            </div>
+        </div>
+    </div>
+
+    <!-- All Credentials Modal -->
+    <div id="allCredentialsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> All System Credentials</h3>
+                <button onclick="closeAllCredentialsModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <div class="tabs" style="margin-bottom: 0;">
+                        <button class="tab-btn active" onclick="showCredentialsTab('adminTab')">Admins</button>
+                        <button class="tab-btn" onclick="showCredentialsTab('teamTab')">Team Members</button>
+                    </div>
+                </div>
+                
+                <div id="adminCredentialsTab" class="tab-content active">
+                    <div style="display: grid; gap: 15px;">
+                        <div style="padding: 15px; background: #f8fff8; border-radius: 10px;">
+                            <h4 style="color: #1b5e20; margin-bottom: 10px;">Admin Accounts</h4>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #e8f5e8;">
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Email</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Password</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Name</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Role</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminCredentialsList">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="teamCredentialsTab" class="tab-content">
+                    <div style="display: grid; gap: 15px;">
+                        <div style="padding: 15px; background: #f8fff8; border-radius: 10px;">
+                            <h4 style="color: #1b5e20; margin-bottom: 10px;">Team Member Accounts</h4>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #e8f5e8;">
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Email</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Password</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Name</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Zone</th>
+                                            <th style="padding: 10px; text-align: left; border: 1px solid #a5d6a7;">Department</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teamCredentialsList">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 10px;">
+                    <p><i class="fas fa-shield-alt"></i> <strong>Security Note:</strong></p>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                        These credentials are for authorized personnel only. Keep this information secure.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    
+    <!-- Admin Page Specific Script -->
+    <script>
+        // Team member database
+        const teamMembers = {
+            'subash@teamlead.com': {
+                name: 'Subash Rai',
+                password: 'Subash@866',
+                zone: 'Downtown',
+                role: 'team',
+                department: 'Landscaping'
+            },
+            'pawan@teamlead.com': {
+                name: 'Pawan Koirala',
+                password: 'Pawan@592',
+                zone: 'Areesh/Green Team/PODs Indoor',
+                role: 'team',
+                department: 'Maintenance'
+            },
+            'sujan@teamlead.com': {
+                name: 'Sujan Subedi',
+                password: 'Sujan@576',
+                zone: 'MUD IP',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'saroj@teamlead.com': {
+                name: 'Saroj Pokhrel',
+                password: 'Saroj@511',
+                zone: 'PODs/VIP/RC/gate 5',
+                role: 'team',
+                department: 'VIP Services'
+            },
+            'taraknath@teamlead.com': {
+                name: 'Taraknath Sharma',
+                password: 'Tarak@593',
+                zone: 'Golf Landscaping',
+                role: 'team',
+                department: 'Golf Course'
+            },
+            'ghadindra@teamlead.com': {
+                name: 'Ghadindra Chaulagain',
+                password: 'Ghadin@570',
+                zone: 'Irrigation MUD/IP/POD/GATE 5',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'shambhu@teamlead.com': {
+                name: 'Shambhu Kumar Sah',
+                password: 'Shambhu@506',
+                zone: 'Irrigation Areesh/Downtown',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'sunil@teamlead.com': {
+                name: 'Sunil Kumar Sah Sudi',
+                password: 'Sunil@583',
+                zone: 'Palm Trees',
+                role: 'team',
+                department: 'Irrigation'
+            },
+	
+        };
+
+        // Admin credentials
+        const adminCredentials = {
+            'admin@landscape.com': {
+                password: 'Landscape@2025',
+                name: 'System Admin',
+                role: 'admin'
+            },
+            'victor@landscape.com': {
+                password: 'Vic123',
+                name: 'Victor AM',
+                role: 'admin'
+            },
+            'james@landscape.com': {
+                password: 'Manager2025',
+                name: 'James Manager',
+                role: 'admin'
+            },
+            'mike@landscape.com': {
+                password: 'Michael123',
+                name: 'Mike AM',
+                role: 'admin'
+            },
+            'chhabi@landscape.com': {
+                password: 'Admin@2025',
+                name: 'Chhabi Admin',
+                role: 'admin'
+            }
+        };
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Admin page loaded. Checking login status...");
+            
+            const savedUser = localStorage.getItem('greenfield_user');
+            if (savedUser) {
+                const userData = JSON.parse(savedUser);
+                console.log("Found saved user:", userData);
+                
+                if (userData.isAdmin) {
+                    console.log("User is admin, showing dashboard...");
+                    showAdminDashboard(userData.name);
+                    loadTeamMembersDropdown();
+                    loadTasksForAssignment();
+                    loadTeamMembers();
+                    renderApprovalTasks();
+                } else {
+                    console.log("User is not admin, redirecting to team page...");
+                    window.location.href = 'team.html';
+                }
+            } else {
+                console.log("No saved user found. Showing login form.");
+            }
+            
+            // Setup tab switching
+            setupTabs();
+            
+            // Setup photo preview for admin form
+            setupPhotoPreview();
+            
+            // Handle Enter key in login form
+            document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleAdminLogin();
+                }
+            });
+            
+            // Show specific member field when needed
+            document.getElementById('urgentAssignTo').addEventListener('change', function() {
+                const specificContainer = document.getElementById('specificMemberContainer');
+                if (this.value === 'specific') {
+                    specificContainer.classList.remove('hidden');
+                    populateSpecificMemberDropdown();
+                } else {
+                    specificContainer.classList.add('hidden');
+                }
+            });
+            
+            // Populate team member dropdowns
+            populateTeamMemberDropdowns();
+        });
+        
+        // Setup tabs
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    openTab(tabId);
+                });
+            });
+            
+            // Show assignment fields when "Create New Task" is selected
+            document.getElementById('taskToAssign').addEventListener('change', function() {
+                const newTaskDiv = document.getElementById('newTaskForAssignment');
+                if (this.value === 'new') {
+                    newTaskDiv.classList.remove('hidden');
+                } else {
+                    newTaskDiv.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Open tab function
+        function openTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Activate clicked tab button
+            event.target.classList.add('active');
+            
+            // If opening approval tab, refresh the list
+            if (tabId === 'approvalTab') {
+                renderApprovalTasks();
+            }
+        }
+        
+        // Populate team member dropdowns
+        function populateTeamMemberDropdowns() {
+            const assignDropdown = document.getElementById('assignToMember');
+            const specificDropdown = document.getElementById('specificMember');
+            
+            // Clear existing options except first
+            while (assignDropdown.options.length > 1) {
+                assignDropdown.remove(1);
+            }
+            while (specificDropdown.options.length > 1) {
+                specificDropdown.remove(1);
+            }
+            
+            // Add team members to dropdowns
+            Object.entries(teamMembers).forEach(([email, member]) => {
+                const option1 = document.createElement('option');
+                option1.value = `${member.name} - ${email}`;
+                option1.textContent = `${member.name} (${member.zone})`;
+                assignDropdown.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = email;
+                option2.textContent = `${member.name} (${member.zone})`;
+                specificDropdown.appendChild(option2);
+            });
+        }
+        
+        function populateSpecificMemberDropdown() {
+            const specificDropdown = document.getElementById('specificMember');
+            while (specificDropdown.options.length > 1) {
+                specificDropdown.remove(1);
+            }
+            
+            Object.entries(teamMembers).forEach(([email, member]) => {
+                const option = document.createElement('option');
+                option.value = email;
+                option.textContent = `${member.name} (${member.zone})`;
+                specificDropdown.appendChild(option);
+            });
+        }
+        
+        // Load team members for dropdown
+        function loadTeamMembersDropdown() {
+            const memberSelect = document.getElementById('assignToMember');
+            // Already populated in populateTeamMemberDropdowns
+        }
+        
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.parentElement.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Handle admin login - SIMPLIFIED VERSION THAT WORKS
+        function handleAdminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            
+            console.log("Login attempt:", email, password ? "***" : "empty");
+            
+            // Simple direct check
+            const lowerEmail = email.toLowerCase();
+            
+            if (adminCredentials[lowerEmail]) {
+                console.log("Found admin:", adminCredentials[lowerEmail].name);
+                console.log("Expected password:", adminCredentials[lowerEmail].password);
+                console.log("Provided password:", password);
+                
+                if (adminCredentials[lowerEmail].password === password) {
+                    console.log("✓ Password matches!");
+                    
+                    // Set user data
+                    currentUser = adminCredentials[lowerEmail].name;
+                    currentUserEmail = lowerEmail;
+                    isAdmin = true;
+                    
+                    // Store in localStorage
+                    localStorage.setItem('greenfield_user', JSON.stringify({
+                        name: adminCredentials[lowerEmail].name,
+                        email: lowerEmail,
+                        isAdmin: true,
+                        role: adminCredentials[lowerEmail].role,
+                        timestamp: new Date().toISOString()
+                    }));
+                    
+                    console.log("✓ User data stored in localStorage");
+                    
+                    // Show dashboard
+                    showAdminDashboard(adminCredentials[lowerEmail].name);
+                    loadTeamMembersDropdown();
+                    loadTasksForAssignment();
+                    loadTeamMembers();
+                    renderApprovalTasks();
+                    
+                    showNotification(`Welcome ${adminCredentials[lowerEmail].name}!`, "success");
+                } else {
+                    console.log("✗ Password does not match");
+                    showNotification("Invalid password. Try: Landscape@2025", "error");
+                }
+            } else {
+                console.log("✗ Admin not found for email:", lowerEmail);
+                showNotification("Admin not found. Try: admin@landscape.com", "error");
+            }
+        }
+        
+        // Debug test login function
+        function debugLoginTest() {
+            console.log("=== DEBUG LOGIN TEST ===");
+            console.log("Testing hardcoded credentials:");
+            
+            // Auto-fill the form with known working credentials
+            document.getElementById('adminEmail').value = "admin@landscape.com";
+            document.getElementById('adminPassword').value = "Landscape@2025";
+            
+            console.log("Form filled with admin@landscape.com / Landscape@2025");
+            console.log("Now attempting login...");
+            
+            // Try to login
+            handleAdminLogin();
+        }
+        
+        // Admin login function - FIXED VERSION
+        async function adminLogin(email, password) {
+            try {
+                console.log("Admin login attempt:", email);
+                
+                if (!email || !password) {
+                    showNotification("Please enter credentials", "error");
+                    return false;
+                }
+                
+                const lowerEmail = email.toLowerCase().trim();
+                console.log("Looking for email:", lowerEmail);
+                console.log("Available admin emails:", Object.keys(adminCredentials));
+                
+                // Check if admin exists
+                if (!adminCredentials[lowerEmail]) {
+                    console.log("Admin not found for email:", lowerEmail);
+                    showNotification("Admin not found", "error");
+                    return false;
+                }
+                
+                const admin = adminCredentials[lowerEmail];
+                console.log("Found admin:", admin.name);
+                console.log("Expected password:", admin.password);
+                console.log("Provided password:", password);
+                
+                // Check password - FIXED COMPARISON
+                if (admin.password.trim() !== password.trim()) {
+                    console.log("Password mismatch!");
+                    showNotification("Invalid password", "error");
+                    return false;
+                }
+                
+                console.log("✓ Credentials valid!");
+                
+                // Set user data
+                currentUser = admin.name;
+                currentUserEmail = lowerEmail;
+                isAdmin = true;
+                
+                // Store in localStorage
+                localStorage.setItem('greenfield_user', JSON.stringify({
+                    name: admin.name,
+                    email: lowerEmail,
+                    isAdmin: true,
+                    role: admin.role,
+                    timestamp: new Date().toISOString()
+                }));
+                
+                console.log("✓ User stored in localStorage");
+                
+                showNotification(`Welcome ${admin.name}!`, "success");
+                return true;
+            } catch (error) {
+                console.error("Admin login error:", error);
+                showNotification("Login failed: " + error.message, "error");
+                return false;
+            }
+        }
+        
+        // Show admin dashboard
+        function showAdminDashboard(userName) {
+            console.log("Showing admin dashboard for:", userName);
+            
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            document.getElementById('adminName').textContent = userName;
+            
+            // Initialize current user
+            const savedUser = JSON.parse(localStorage.getItem('greenfield_user'));
+            if (savedUser) {
+                window.currentUser = savedUser.name;
+                window.currentUserEmail = savedUser.email;
+                window.isAdmin = true;
+                console.log("Current user initialized:", currentUser, currentUserEmail, isAdmin);
+            }
+            
+            // Render initial tasks
+            filterTasks();
+            updateStats();
+            updateApprovalCount();
+        }
+        
+        // Submit admin task request
+        async function submitAdminTaskRequest() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const description = document.getElementById('taskDescription').value.trim();
+            const zone = document.getElementById('taskZone').value;
+            const priority = document.getElementById('taskPriority').value;
+            const estimatedHours = document.getElementById('estimatedHours').value;
+            const deadline = document.getElementById('taskDeadline').value;
+            const notes = document.getElementById('additionalNotes').value.trim();
+            const photoFile = document.getElementById('taskPhotos').files[0];
+            
+            if (!title || !description || !zone || zone === "") {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const taskId = db.ref().child('tasks').push().key;
+                
+                // Convert image to Base64
+                let photoBase64 = null;
+                if (photoFile) {
+                    if (photoFile.size > 2 * 1024 * 1024) {
+                        showNotification("Image must be less than 2MB", "error");
+                        showLoading(false);
+                        return;
+                    }
+                    photoBase64 = await convertImageToBase64(photoFile);
+                }
+                
+                const taskData = {
+                    id: taskId,
+                    title: title,
+                    description: description,
+                    zone: zone,
+                    requested_by: currentUserEmail || currentUser,
+                    requested_by_name: currentUser,
+                    requested_at: new Date().toISOString(),
+                    priority: priority,
+                    estimated_hours: estimatedHours || null,
+                    deadline: deadline || null,
+                    additional_notes: notes || null,
+                    photoBase64: photoBase64,
+                    status: 'approved', // Admin tasks are auto-approved
+                    is_admin_request: true,
+                    admin_notes: notes,
+                    last_updated: Date.now(),
+                    // Admin tasks are immediately visible
+                    is_visible_to_all: true,
+                    needs_approval: false,
+                    approved_by: currentUser,
+                    approved_at: new Date().toISOString(),
+                    approved_date: new Date().toISOString()
+                };
+                
+                await db.ref(`tasks/${taskId}`).set(taskData);
+                
+                // Clear form
+                document.getElementById('taskTitle').value = '';
+                document.getElementById('taskDescription').value = '';
+                document.getElementById('taskZone').selectedIndex = 0;
+                document.getElementById('taskPriority').selectedIndex = 0;
+                document.getElementById('estimatedHours').value = '';
+                document.getElementById('taskDeadline').value = '';
+                document.getElementById('additionalNotes').value = '';
+                document.getElementById('taskPhotos').value = '';
+                document.getElementById('photosPreview').innerHTML = '';
+                
+                showNotification('Task submitted successfully!', 'success');
+            } catch (error) {
+                console.error('Error submitting task:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Load tasks for assignment dropdown
+        function loadTasksForAssignment() {
+            const taskSelect = document.getElementById('taskToAssign');
+            
+            // Clear existing options except first two
+            while (taskSelect.options.length > 2) {
+                taskSelect.remove(2);
+            }
+            
+            // Add pending tasks to dropdown
+            if (tasks && typeof tasks === 'object') {
+                Object.entries(tasks).forEach(([taskId, task]) => {
+                    if (task.status === 'pending' || task.status === 'approved') {
+                        const option = document.createElement('option');
+                        option.value = taskId;
+                        const desc = task.description || '';
+                        option.textContent = `${task.zone}: ${desc.substring(0, 50)}...`;
+                        taskSelect.appendChild(option);
+                    }
+                });
+            }
+        }
+        
+        // Assign task to team member
+        async function assignTaskToMember() {
+            const member = document.getElementById('assignToMember').value;
+            const taskId = document.getElementById('taskToAssign').value;
+            const dueDate = document.getElementById('assignmentDueDate').value;
+            const priority = document.getElementById('assignmentPriority').value;
+            
+            if (!member || !taskId) {
+                showNotification('Please select team member and task', 'error');
+                return;
+            }
+            
+            if (taskId === 'new') {
+                // Create new task
+                const description = document.getElementById('assignTaskDesc').value.trim();
+                const zone = document.getElementById('assignTaskZone').value;
+                
+                if (!description || !zone || zone === "") {
+                    showNotification('Please fill task details', 'error');
+                    return;
+                }
+                
+                const newTaskId = db.ref().child('tasks').push().key;
+                const taskData = {
+                    id: newTaskId,
+                    description: description,
+                    zone: zone,
+                    requested_by: currentUserEmail || currentUser,
+                    requested_by_name: currentUser,
+                    assigned_to: member,
+                    assigned_by: currentUser,
+                    assigned_at: new Date().toISOString(),
+                    due_date: dueDate || null,
+                    priority: priority,
+                    status: 'approved',
+                    approved_by: currentUser,
+                    approved_at: new Date().toISOString(),
+                    is_assigned: true,
+                    is_admin_request: true,
+                    last_updated: Date.now(),
+                    // Assigned tasks are immediately visible
+                    is_visible_to_all: true,
+                    needs_approval: false
+                };
+                
+                await db.ref(`tasks/${newTaskId}`).set(taskData);
+                showNotification('Task created and assigned successfully!', 'success');
+            } else if (taskId) {
+                // Update existing task
+                const taskData = {
+                    assigned_to: member,
+                    assigned_by: currentUser,
+                    assigned_at: new Date().toISOString(),
+                    due_date: dueDate || null,
+                    priority: priority,
+                    status: 'approved',
+                    approved_by: currentUser,
+                    approved_at: new Date().toISOString(),
+                    is_assigned: true,
+                    last_updated: Date.now()
+                };
+                
+                await db.ref(`tasks/${taskId}`).update(taskData);
+                showNotification('Task assigned successfully!', 'success');
+            } else {
+                showNotification('Please select or create a task', 'error');
+                return;
+            }
+            
+            // Clear form
+            document.getElementById('assignToMember').selectedIndex = 0;
+            document.getElementById('taskToAssign').selectedIndex = 0;
+            document.getElementById('assignmentDueDate').value = '';
+            document.getElementById('assignTaskDesc').value = '';
+            document.getElementById('assignTaskZone').selectedIndex = 0;
+            document.getElementById('newTaskForAssignment').classList.add('hidden');
+            
+            // Refresh task list
+            loadTasksForAssignment();
+        }
+        
+        // Submit urgent task
+        async function submitUrgentTask() {
+            const title = document.getElementById('urgentTaskTitle').value.trim();
+            const description = document.getElementById('urgentDescription').value.trim();
+            const location = document.getElementById('urgentLocation').value;
+            const responseTime = document.getElementById('responseTime').value;
+            const assignOption = document.getElementById('urgentAssignTo').value;
+            const specificMember = document.getElementById('specificMember').value;
+            
+            if (!title || !description || !location || location === "" || !responseTime) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const taskId = db.ref().child('tasks').push().key;
+                
+                let assignedTo = null;
+                if (assignOption === 'specific' && specificMember) {
+                    assignedTo = specificMember;
+                }
+                
+                const taskData = {
+                    id: taskId,
+                    title: title,
+                    description: description,
+                    zone: location,
+                    requested_by: currentUserEmail || currentUser,
+                    requested_by_name: currentUser,
+                    requested_at: new Date().toISOString(),
+                    priority: 'urgent',
+                    response_time: responseTime,
+                    status: 'approved', // Urgent tasks are auto-approved
+                    is_urgent: true,
+                    urgent_requested_by: currentUser,
+                    assigned_to: assignedTo,
+                    assigned_by: assignedTo ? currentUser : null,
+                    is_admin_request: true,
+                    approved_by: currentUser,
+                    approved_at: new Date().toISOString(),
+                    last_updated: Date.now(),
+                    urgent_flag: true,
+                    // Urgent tasks are immediately visible
+                    is_visible_to_all: true,
+                    needs_approval: false
+                };
+                
+                await db.ref(`tasks/${taskId}`).set(taskData);
+                
+                // Clear form
+                document.getElementById('urgentTaskTitle').value = '';
+                document.getElementById('urgentDescription').value = '';
+                document.getElementById('urgentLocation').selectedIndex = 0;
+                document.getElementById('specificMember').selectedIndex = 0;
+                document.getElementById('urgentPhotos').value = '';
+                document.getElementById('urgentAssignTo').selectedIndex = 0;
+                document.getElementById('specificMemberContainer').classList.add('hidden');
+                
+                showNotification('URGENT task submitted! Team notified.', 'success');
+            } catch (error) {
+                console.error('Error submitting urgent task:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Filter tasks
+        function filterTasks() {
+            const searchTerm = document.getElementById('adminSearch').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            renderTasks(searchTerm, statusFilter);
+        }
+        
+        // Render tasks for approval
+        function renderApprovalTasks() {
+            const approvalTaskList = document.getElementById('approvalTaskList');
+            if (!approvalTaskList) return;
+            
+            // Filter tasks that need approval
+            const tasksNeedingApproval = Object.entries(tasks).filter(([taskId, task]) => {
+                return task.needs_approval === true && 
+                       task.status === 'pending' &&
+                       !task.is_admin_request; // Don't show admin requests
+            }).sort((a, b) => new Date(a[1].requested_at) - new Date(b[1].requested_at));
+            
+            updateApprovalCount();
+            
+            if (tasksNeedingApproval.length === 0) {
+                approvalTaskList.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #666;">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #4caf50; margin-bottom: 15px;"></i>
+                        <h4 style="color: #4caf50;">No Tasks Pending Approval</h4>
+                        <p>All tasks have been reviewed and approved.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            tasksNeedingApproval.forEach(([taskId, task]) => {
+                const requestedDate = task.requested_at ? 
+                    new Date(task.requested_at).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Date not set';
+                
+                // Find team member info
+                const teamMember = teamMembers[task.requested_by] || {};
+                
+                html += `
+                    <div class="task-card needs-approval" style="border-left: 5px solid #ff9800;">
+                        <div class="task-meta">
+                            <div>
+                                <span class="status-badge status-Pending">
+                                    <i class="fas fa-clock"></i> PENDING APPROVAL
+                                </span>
+                                <strong>${task.zone || 'No Zone'}</strong>
+                            </div>
+                            <small>${requestedDate}</small>
+                        </div>
+                        
+                        <h4 style="color: #1b5e20; margin-bottom: 10px;">Task Request</h4>
+                        <p>${task.description || 'No description'}</p>
+                        
+                        <div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                            <h5 style="color: #666; margin-bottom: 10px;">Request Details</h5>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #888;">Requested By</div>
+                                    <div><i class="fas fa-user"></i> ${task.requested_by_name || teamMember.name || 'Unknown'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #888;">Department</div>
+                                    <div><i class="fas fa-briefcase"></i> ${task.department || teamMember.department || 'Not specified'}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #888;">Assigned Zone</div>
+                                    <div><i class="fas fa-map-marker-alt"></i> ${task.user_zone || teamMember.zone || 'Not specified'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${task.photoBase64 ? `
+                            <div style="margin: 10px 0;">
+                                <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
+                                    <i class="fas fa-camera"></i> Photo attached by requester
+                                </p>
+                                <img src="${task.photoBase64}" alt="Task photo" 
+                                     style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #ddd;"
+                                     onclick="openPhotoModal('${task.photoBase64}')">
+                            </div>
+                        ` : ''}
+                        
+                        <div class="task-actions" style="margin-top: 20px;">
+                            <button class="btn submit" onclick="approveTask('${taskId}')">
+                                <i class="fas fa-check"></i> APPROVE TASK
+                            </button>
+                            <button class="btn red" onclick="rejectTaskWithReason('${taskId}')">
+                                <i class="fas fa-times"></i> REJECT TASK
+                            </button>
+                            <button class="btn small" onclick="viewRequesterDetails('${task.requested_by}')" style="background: #666; color: white;">
+                                <i class="fas fa-user"></i> View Requester
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            approvalTaskList.innerHTML = html;
+        }
+        
+        // Update approval count
+        function updateApprovalCount() {
+            const approvalCountElement = document.getElementById('approvalCount');
+            const needsApprovalElement = document.getElementById('needsApprovalTasks');
+            
+            if (!approvalCountElement && !needsApprovalElement) return;
+            
+            const tasksNeedingApproval = Object.values(tasks).filter(task => {
+                return task.needs_approval === true && 
+                       task.status === 'pending' &&
+                       !task.is_admin_request;
+            }).length;
+            
+            if (approvalCountElement) {
+                approvalCountElement.textContent = tasksNeedingApproval;
+            }
+            if (needsApprovalElement) {
+                needsApprovalElement.textContent = tasksNeedingApproval;
+            }
+        }
+        
+        // Reject task with reason
+        function rejectTaskWithReason(taskId) {
+            const reason = prompt("Please provide a reason for rejection (optional):", "");
+            if (reason === null) return; // User cancelled
+            
+            rejectTask(taskId, reason);
+        }
+        
+        // View requester details
+        function viewRequesterDetails(email) {
+            const member = teamMembers[email];
+            if (!member) {
+                alert(`No details found for ${email}`);
+                return;
+            }
+            
+            const details = `
+                Team Member Details:
+                
+                Name: ${member.name}
+                Email: ${email}
+                Zone: ${member.zone}
+                Department: ${member.department}
+                Role: ${member.role}
+                
+                This member has been with the team since: Not specified
+                Tasks created: ${Object.values(tasks).filter(t => t.requested_by === email).length}
+            `;
+            
+            alert(details);
+        }
+        
+        // Setup photo preview for admin form
+        function setupPhotoPreview() {
+            document.getElementById('taskPhotos').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById('photosPreview');
+                preview.innerHTML = '';
+                
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        showNotification('Maximum 2MB per photo', 'error');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imgDiv = document.createElement('div');
+                        imgDiv.style.cssText = `
+                            width: 100px;
+                            height: 100px;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            border: 2px solid #4caf50;
+                            position: relative;
+                        `;
+                        
+                        imgDiv.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                            <span style="position: absolute; top: 2px; right: 2px; background: #c62828; color: white; 
+                                  border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; 
+                                  justify-content: center; font-size: 12px; cursor: pointer;"
+                                  onclick="removePhotoPreview(this)">×</span>
+                        `;
+                        
+                        preview.appendChild(imgDiv);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Remove photo preview
+        function removePhotoPreview(element) {
+            element.parentElement.remove();
+            document.getElementById('taskPhotos').value = '';
+        }
+        
+        // Show statistics modal
+        function showStatsModal() {
+            const taskArray = Object.values(tasks);
+            const total = taskArray.length;
+            const pending = taskArray.filter(t => t.status === 'pending').length;
+            const approved = taskArray.filter(t => t.status === 'approved').length;
+            const completed = taskArray.filter(t => t.status === 'completed').length;
+            const cancelled = taskArray.filter(t => t.status === 'cancelled').length;
+            const rejected = taskArray.filter(t => t.status === 'rejected').length;
+            const needsApproval = taskArray.filter(t => t.needs_approval && t.status === 'pending').length;
+            
+            const pendingPercent = total ? ((pending/total)*100).toFixed(1) : 0;
+            const completedPercent = total ? ((completed/total)*100).toFixed(1) : 0;
+            const approvalRate = (approved + completed) > 0 ? 
+                (((approved + completed) / (approved + completed + rejected)) * 100).toFixed(1) : 0;
+            
+            const statsHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div style="grid-column: span 2; text-align: center; padding: 20px; background: #f8fff8; border-radius: 10px;">
+                        <h3 style="color: #1b5e20;">Overall Progress</h3>
+                        <div style="height: 20px; background: #e0e0e0; border-radius: 10px; margin: 20px 0; overflow: hidden;">
+                            <div style="height: 100%; background: #4caf50; width: ${completedPercent}%;"></div>
+                        </div>
+                        <p>${completedPercent}% Completed</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #fff3e0; border-radius: 10px;">
+                        <h4 style="color: #e65100;">Pending: ${pending}</h4>
+                        <p>${pendingPercent}% of total</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #e8f5e8; border-radius: 10px;">
+                        <h4 style="color: #2e7d32;">Approved: ${approved}</h4>
+                        <p>${total ? ((approved/total)*100).toFixed(1) : 0}% of total</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #e3f2fd; border-radius: 10px;">
+                        <h4 style="color: #1565c0;">Completed: ${completed}</h4>
+                        <p>${completedPercent}% of total</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #ffebee; border-radius: 10px;">
+                        <h4 style="color: #c62828;">Cancelled: ${cancelled}</h4>
+                        <p>${total ? ((cancelled/total)*100).toFixed(1) : 0}% of total</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 10px;">
+                        <h4 style="color: #666;">Rejected: ${rejected}</h4>
+                        <p>${total ? ((rejected/total)*100).toFixed(1) : 0}% of total</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #fff8e1; border-radius: 10px; grid-column: span 2;">
+                        <h4 style="color: #ff9800;">
+                            <i class="fas fa-clock"></i> Needs Approval: ${needsApproval}
+                        </h4>
+                        <p>Tasks waiting for admin review</p>
+                    </div>
+                    
+                    <div style="padding: 15px; background: #e8f5e8; border-radius: 10px; grid-column: span 2;">
+                        <h4 style="color: #2e7d32;">
+                            <i class="fas fa-chart-line"></i> Approval Rate: ${approvalRate}%
+                        </h4>
+                        <p>Percentage of tasks approved vs rejected</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+                    <h4>Task Types</h4>
+                    <p>• Admin Requests: ${taskArray.filter(t => t.is_admin_request).length}</p>
+                    <p>• Team Requests: ${taskArray.filter(t => !t.is_admin_request && t.needs_approval).length}</p>
+                    <p>• Approved Team Tasks: ${taskArray.filter(t => !t.is_admin_request && t.status === 'approved').length}</p>
+                    <p>• Assigned Tasks: ${taskArray.filter(t => t.is_assigned).length}</p>
+                    <p>• Urgent Tasks: ${taskArray.filter(t => t.is_urgent).length}</p>
+                </div>
+            `;
+            
+            document.getElementById('statsContent').innerHTML = statsHTML;
+            document.getElementById('statsModal').classList.remove('hidden');
+        }
+        
+        // Close stats modal
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.add('hidden');
+        }
+        
+        // ========== TEAM MANAGEMENT FUNCTIONS ==========
+        
+        // Load and display team members
+        function loadTeamMembers() {
+            const teamMembersList = document.getElementById('teamMembersList');
+            if (!teamMembersList) return;
+            
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            Object.entries(teamMembers).forEach(([email, member]) => {
+                html += `
+                    <div style="padding: 15px; border: 2px solid #a5d6a7; border-radius: 10px; background: white; 
+                         box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <div style="width: 40px; height: 40px; background: #4caf50; border-radius: 50%; 
+                                         display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <strong style="color: #1b5e20; font-size: 1.1rem;">${member.name}</strong>
+                                        <div style="font-size: 0.9rem; color: #666;">${email}</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #888;">Zone</div>
+                                        <div><i class="fas fa-map-marker-alt"></i> ${member.zone}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #888;">Department</div>
+                                        <div><i class="fas fa-briefcase"></i> ${member.department}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #888;">Password</div>
+                                        <div><i class="fas fa-key"></i> ${member.password}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #888;">Role</div>
+                                        <div><i class="fas fa-user-tag"></i> ${member.role}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-left: 15px; display: flex; flex-direction: column; gap: 5px;">
+                                <button onclick="editTeamMember('${email}')" class="btn small blue">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button onclick="resetPassword('${email}')" class="btn small">
+                                    <i class="fas fa-redo"></i> Reset Pass
+                                </button>
+                                <button onclick="removeTeamMember('${email}')" class="btn small red">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            teamMembersList.innerHTML = html;
+        }
+        
+        // Search team members
+        function searchTeamMembers() {
+            const searchTerm = document.getElementById('searchTeamMembers').value.toLowerCase();
+            const teamMembersList = document.getElementById('teamMembersList');
+            
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            const filteredMembers = Object.entries(teamMembers).filter(([email, member]) => {
+                if (!searchTerm) return true;
+                return (
+                    member.name.toLowerCase().includes(searchTerm) ||
+                    email.toLowerCase().includes(searchTerm) ||
+                    member.zone.toLowerCase().includes(searchTerm) ||
+                    member.department.toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            if (filteredMembers.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 30px; color: #666;">
+                        <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No team members found</p>
+                    </div>
+                `;
+            } else {
+                filteredMembers.forEach(([email, member]) => {
+                    html += `
+                        <div style="padding: 15px; border: 2px solid #a5d6a7; border-radius: 10px; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <strong style="color: #1b5e20;">${member.name}</strong>
+                                    <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                                        <i class="fas fa-envelope"></i> ${email}
+                                    </div>
+                                    <div style="font-size: 0.9rem; color: #666; margin-top: 2px;">
+                                        <i class="fas fa-map-marker-alt"></i> ${member.zone}
+                                    </div>
+                                    <div style="font-size: 0.9rem; color: #666; margin-top: 2px;">
+                                        <i class="fas fa-key"></i> Password: ${member.password}
+                                    </div>
+                                </div>
+                                <div>
+                                    <button onclick="editTeamMember('${email}')" class="btn small blue">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += '</div>';
+            teamMembersList.innerHTML = html;
+        }
+        
+        // Generate random password
+        function generatePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&';
+            let password = '';
+            for (let i = 0; i < 10; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('newMemberPassword').value = password;
+        }
+        
+        // Add new team member
+        function addNewTeamMember() {
+            const name = document.getElementById('newMemberName').value.trim();
+            const email = document.getElementById('newMemberEmail').value.trim().toLowerCase();
+            const password = document.getElementById('newMemberPassword').value;
+            const department = document.getElementById('newMemberDept').value;
+            const zone = document.getElementById('newMemberZone').value;
+            
+            if (!name || !email || !password) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            if (teamMembers[email]) {
+                showNotification('Team member with this email already exists', 'error');
+                return;
+            }
+            
+            // Validate email
+            if (!email.includes('@')) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            // Add to team members object
+            teamMembers[email] = {
+                name: name,
+                password: password,
+                zone: zone || 'Not assigned',
+                role: 'team',
+                department: department
+            };
+            
+            // Clear form
+            document.getElementById('newMemberName').value = '';
+            document.getElementById('newMemberEmail').value = '';
+            document.getElementById('newMemberPassword').value = '';
+            document.getElementById('newMemberZone').value = '';
+            
+            // Refresh dropdowns and list
+            populateTeamMemberDropdowns();
+            loadTeamMembers();
+            showNotification(`Team member ${name} added successfully!`, 'success');
+            
+            // Log to database
+            try {
+                db.ref('logs/team_members').push({
+                    action: 'added',
+                    email: email,
+                    name: name,
+                    by: currentUser,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                console.log('Failed to log team member addition:', error);
+            }
+        }
+        
+        // Edit team member
+        function editTeamMember(email) {
+            const member = teamMembers[email];
+            if (!member) return;
+            
+            const newName = prompt('Edit name:', member.name);
+            if (newName === null) return;
+            
+            const newZone = prompt('Edit zone:', member.zone);
+            if (newZone === null) return;
+            
+            const newDept = prompt('Edit department:', member.department);
+            if (newDept === null) return;
+            
+            const newPassword = prompt('New password (leave empty to keep current):', '');
+            
+            // Update member
+            member.name = newName || member.name;
+            member.zone = newZone || member.zone;
+            member.department = newDept || member.department;
+            if (newPassword) {
+                member.password = newPassword;
+            }
+            
+            // Refresh list and dropdowns
+            populateTeamMemberDropdowns();
+            loadTeamMembers();
+            showNotification('Team member updated!', 'success');
+        }
+        
+        // Reset password
+        function resetPassword(email) {
+            const member = teamMembers[email];
+            if (!member) return;
+            
+            const defaultPassword = member.name.replace(/\s+/g, '') + '@2025';
+            const newPassword = prompt('Enter new password for ' + member.name + ':', defaultPassword);
+            
+            if (newPassword && newPassword.length >= 4) {
+                member.password = newPassword;
+                populateTeamMemberDropdowns();
+                loadTeamMembers();
+                showNotification('Password reset successfully!', 'success');
+            }
+        }
+        
+        // Remove team member
+        function removeTeamMember(email) {
+            if (!confirm('Are you sure you want to remove this team member?')) return;
+            
+            const member = teamMembers[email];
+            if (!member) return;
+            
+            delete teamMembers[email];
+            populateTeamMemberDropdowns();
+            loadTeamMembers();
+            showNotification(`Team member ${member.name} removed`, 'success');
+            
+            // Log removal
+            try {
+                db.ref('logs/team_members').push({
+                    action: 'removed',
+                    email: email,
+                    name: member.name,
+                    by: currentUser,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                console.log('Failed to log team member removal:', error);
+            }
+        }
+        
+        // ========== CREDENTIALS MODAL FUNCTIONS ==========
+        
+        // Show all credentials modal
+        function showAllCredentials() {
+            // Populate admin credentials
+            let adminHtml = '';
+            Object.entries(adminCredentials).forEach(([email, admin]) => {
+                adminHtml += `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${email}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${admin.password}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${admin.name}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${admin.role}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('adminCredentialsList').innerHTML = adminHtml;
+            
+            // Populate team credentials
+            let teamHtml = '';
+            Object.entries(teamMembers).forEach(([email, member]) => {
+                teamHtml += `
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${email}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${member.password}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${member.name}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${member.zone}</td>
+                        <td style="padding: 10px; border: 1px solid #a5d6a7;">${member.department}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('teamCredentialsList').innerHTML = teamHtml;
+            
+            document.getElementById('allCredentialsModal').classList.remove('hidden');
+        }
+        
+        // Close all credentials modal
+        function closeAllCredentialsModal() {
+            document.getElementById('allCredentialsModal').classList.add('hidden');
+        }
+        
+        // Show credentials tab
+        function showCredentialsTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('#allCredentialsModal .tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('#allCredentialsModal .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            if (tabId === 'adminTab') {
+                document.getElementById('adminCredentialsTab').classList.add('active');
+                event.target.classList.add('active');
+            } else if (tabId === 'teamTab') {
+                document.getElementById('teamCredentialsTab').classList.add('active');
+                event.target.classList.add('active');
+            }
+        }
+        
+        // Copy credentials
+        function copyCredentialsToClipboard(type, email) {
+            let text = '';
+            
+            if (type === 'admin' && adminCredentials[email]) {
+                const admin = adminCredentials[email];
+                text = `Admin Credentials:\nEmail: ${email}\nPassword: ${admin.password}\nName: ${admin.name}`;
+            } else if (type === 'team' && teamMembers[email]) {
+                const member = teamMembers[email];
+                text = `Team Credentials:\nEmail: ${email}\nPassword: ${member.password}\nName: ${member.name}\nZone: ${member.zone}`;
+            }
+            
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification('Credentials copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                    showNotification('Failed to copy', 'error');
+                });
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            currentUser = null;
+            currentUserEmail = "";
+            isAdmin = false;
+            localStorage.removeItem('greenfield_user');
+            window.location.href = 'index.html';
+        }
+        
+        // Make functions available globally
+        window.handleAdminLogin = handleAdminLogin;
+        window.debugLoginTest = debugLoginTest;
+        window.togglePassword = togglePassword;
+        window.logout = logout;
+        window.openTab = openTab;
+        window.showAllCredentials = showAllCredentials;
+        window.closeAllCredentialsModal = closeAllCredentialsModal;
+        window.showCredentialsTab = showCredentialsTab;
+        window.showStatsModal = showStatsModal;
+        window.closeStatsModal = closeStatsModal;
+        window.filterTasks = filterTasks;
+        window.renderApprovalTasks = renderApprovalTasks;
+        window.rejectTaskWithReason = rejectTaskWithReason;
+        window.viewRequesterDetails = viewRequesterDetails;
+        window.removePhotoPreview = removePhotoPreview;
+        window.submitAdminTaskRequest = submitAdminTaskRequest;
+        window.assignTaskToMember = assignTaskToMember;
+        window.submitUrgentTask = submitUrgentTask;
+        window.searchTeamMembers = searchTeamMembers;
+        window.generatePassword = generatePassword;
+        window.addNewTeamMember = addNewTeamMember;
+        window.editTeamMember = editTeamMember;
+        window.resetPassword = resetPassword;
+        window.removeTeamMember = removeTeamMember;
+    </script>
+</body>
+</html>

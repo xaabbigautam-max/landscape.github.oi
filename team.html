@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Login • Greenfield Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm" class="card">
+            <h2><i class="fas fa-users"></i> Team Member Login</h2>
+            <p class="subtitle">Use your registered email and password</p>
+            
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="teamEmail" placeholder="your.email@greenfield.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="teamPassword" placeholder="Enter your password" required>
+                    <button type="button" onclick="togglePassword('teamPassword')" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                   background: none; border: none; color: #666; cursor: pointer;">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="handleTeamLogin()" class="btn login">
+                <i class="fas fa-sign-in-alt"></i> LOGIN
+            </button>
+            
+            <div class="info-box">
+                <p><i class="fas fa-info-circle"></i> Registered team members only</p>
+                <p style="font-size: 0.9rem; margin-top: 5px;">
+                    Contact administrator for password reset
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="index.html" class="btn small">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Team Dashboard -->
+        <div id="teamDashboard" class="hidden">
+            <div class="header">
+                <div>
+                    <h3><i class="fas fa-user-circle"></i> Welcome, <span id="userName">User</span></h3>
+                    <p style="color: #666; font-size: 0.9rem;" id="userZone">Team Member</p>
+                </div>
+                <div>
+                    <button onclick="logout()" class="btn small red">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tasks Assigned To Me -->
+            <div class="card" style="background: #f5f9ff; border-left: 5px solid #1565c0;">
+                <h3><i class="fas fa-user-check"></i> Tasks Assigned To Me (<span id="assignedCount">0</span>)</h3>
+                <p class="subtitle" style="color: #1565c0;">Ready to work on these tasks</p>
+                
+                <div id="assignedTaskList">
+                    <!-- Tasks assigned to me will appear here -->
+                </div>
+            </div>
+
+            <!-- Tasks I Can Complete -->
+            <div class="card" style="background: #f8fff8; border-left: 5px solid #2e7d32;">
+                <h3><i class="fas fa-check-circle"></i> Tasks Ready to Complete (<span id="readyToCompleteCount">0</span>)</h3>
+                <p class="subtitle" style="color: #2e7d32;">Click "Mark Complete" when done</p>
+                
+                <div id="readyToCompleteList">
+                    <!-- Tasks ready for completion will appear here -->
+                </div>
+            </div>
+
+            <!-- Pending Approval Tasks Section -->
+            <div class="card" id="pendingApprovalSection" style="background: #fff8e1; border-left: 5px solid #ff9800;">
+                <h3><i class="fas fa-clock"></i> Tasks Pending Approval (<span id="pendingCount">0</span>)</h3>
+                <p class="subtitle" style="color: #ff9800;">Waiting for admin approval</p>
+                
+                <div id="pendingTaskList">
+                    <!-- Tasks will appear here -->
+                </div>
+            </div>
+
+            <!-- Add New Task Form -->
+            <div class="card">
+                <h3><i class="fas fa-plus-circle"></i> Create New Task (Requires Approval)</h3>
+                <p class="subtitle" style="color: #666; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> Tasks will be submitted for admin approval
+                </p>
+                
+                <div class="form-group">
+                    <label>Task Description *</label>
+                    <textarea id="taskDescription" placeholder="Describe the task in detail..." rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Zone *</label>
+                    <select id="taskZone" required>
+                        <option value="">Select Zone</option>
+                        <option value="Main Villa">Main Villa</option>
+                        <option value="Main SPA">Main SPA</option>
+                        <option value="Mountain Villa">Mountain Villa</option>
+                        <option value="Entourage">Entourage</option>
+                        <option value="Pool House">Pool House</option>
+                        <option value="Gate 3">Gate 3</option>
+                        <option value="Golf Landscaping">Golf Landscaping</option>
+                        <option value="Areesh">Areesh</option>
+                        <option value="MUD 1">MUD 1</option>
+                        <option value="MUD 2">MUD 2</option>
+                        <option value="MUD 3">MUD 3</option>
+                        <option value="MUD 4">MUD 4</option>
+                        <option value="MUD 5">MUD 5</option>
+                        <option value="MUD 6">MUD 6</option>
+                        <option value="Paddle Court">Paddle Court</option>
+                        <option value="Gaming Building">GB</option>
+                        <option value="Indian Palace Front">Indian Palace Front</option>
+                        <option value="Indian Palace back">Indian Palace back</option>
+                        <option value="Royal Caravan">Royal Caravan</option>
+                        <option value="Cycle Track">Cycle Track</option>
+                        <option value="POD 1 Indoor">Pod 1 Indoor</option>
+                        <option value="POD 1 Out door">Pod 1 Outdoor</option>
+                        <option value="Royal Road">Royal Road</option>
+                        <option value="Gate 5">Gate 5</option>
+                        <option value="VIP Hotel">VIP H</option>
+                        <option value="Staff Canteen">SC Z1</option>
+                        <option value="Staff Canteen">SC Z2</option>
+                        <option value="Staff Canteen">SC Z3</option>
+                        <option value="Other">Other Area</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-camera"></i> Add Photo (Optional - Max 2MB)
+                    </label>
+                    <input type="file" id="taskPhoto" accept="image/*" style="padding: 10px;">
+                    <div id="photoPreview" style="margin-top: 10px;"></div>
+                </div>
+                
+                <button onclick="submitNewTask()" class="btn submit" id="submitTaskBtn">
+                    <i class="fas fa-paper-plane"></i> SUBMIT TASK
+                </button>
+            </div>
+
+            <!-- My Completed Tasks -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fas fa-flag-checkered"></i> My Completed Tasks (<span id="completedTaskCount">0</span>)</h3>
+                </div>
+                
+                <div id="completedTaskList">
+                    <!-- Completed tasks will appear here -->
+                </div>
+            </div>
+
+            <!-- All My Tasks -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fas fa-list"></i> All My Tasks (<span id="allTaskCount">0</span>)</h3>
+                </div>
+                
+                <div id="allTaskList">
+                    <!-- All tasks will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    
+    <!-- Team Page Specific Script -->
+    <script>
+        // Team member database
+        const teamMembers = {
+            'subash@teamlead.com': {
+                name: 'Subash Rai',
+                password: 'Subash@866',
+                zone: 'Downtown',
+                role: 'team',
+                department: 'Landscaping'
+            },
+            'pawan@teamlead.com': {
+                name: 'Pawan Koirala',
+                password: 'Pawan@592',
+                zone: 'Areesh/Green Team/PODs Indoor',
+                role: 'team',
+                department: 'Maintenance'
+            },
+            'sujan@teamlead.com': {
+                name: 'Sujan Subedi',
+                password: 'Sujan@576',
+                zone: 'MUD IP',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'saroj@teamlead.com': {
+                name: 'Saroj Pokhrel',
+                password: 'Saroj@511',
+                zone: 'PODs/VIP/RC/gate 5',
+                role: 'team',
+                department: 'VIP Services'
+            },
+            'taraknath@teamlead.com': {
+                name: 'Taraknath Sharma',
+                password: 'Tarak@593',
+                zone: 'Golf Landscaping',
+                role: 'team',
+                department: 'Golf Course'
+            },
+            'ghadindra@teamlead.com': {
+                name: 'Ghadindra Chaulagain',
+                password: 'Ghadin@570',
+                zone: 'Irrigation MUD/IP/POD/GATE 5',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'shambhu@teamlead.com': {
+                name: 'Shambhu Kumar Sah',
+                password: 'Shambhu@506',
+                zone: 'Irrigation Areesh/Downtown',
+                role: 'team',
+                department: 'Irrigation'
+            },
+            'sunil@teamlead.com': {
+                name: 'Sunil Kumar Sah Sudi',
+                password: 'Sunil@583',
+                zone: 'Palm Trees',
+                role: 'team',
+                department: 'Irrigation'
+            },
+        };
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Team page loaded");
+            
+            const savedUser = localStorage.getItem('greenfield_user');
+            if (savedUser) {
+                const userData = JSON.parse(savedUser);
+                console.log("Found saved user:", userData);
+                
+                if (!userData.isAdmin) {
+                    showTeamDashboard(userData.name, userData.zone);
+                } else {
+                    window.location.href = 'admin.html';
+                }
+            }
+            
+            // Handle Enter key in login form
+            document.getElementById('teamPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleTeamLogin();
+                }
+            });
+            
+            // Photo preview handler
+            document.getElementById('taskPhoto').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        showNotification("Image too large (max 2MB)", "error");
+                        this.value = '';
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('photoPreview').innerHTML = `
+                            <img src="${e.target.result}" alt="Preview" 
+                                 style="max-width: 200px; border-radius: 8px; border: 2px solid #4caf50;">
+                            <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                            </p>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+        
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.parentElement.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+        
+        // Team login function
+        async function teamLogin(email, password) {
+            try {
+                if (!email || !password) {
+                    showNotification("Please enter email and password", "error");
+                    return false;
+                }
+                
+                const lowerEmail = email.toLowerCase().trim();
+                
+                // Check if email exists in team members
+                if (!teamMembers[lowerEmail]) {
+                    showNotification("Team member not found", "error");
+                    return false;
+                }
+                
+                const member = teamMembers[lowerEmail];
+                
+                // Check password
+                if (member.password !== password) {
+                    showNotification("Invalid password", "error");
+                    return false;
+                }
+                
+                // Set current user
+                currentUser = member.name;
+                currentUserEmail = lowerEmail;
+                isAdmin = false;
+                
+                // Store user info with additional data
+                localStorage.setItem('greenfield_user', JSON.stringify({
+                    name: member.name,
+                    email: lowerEmail,
+                    isAdmin: false,
+                    zone: member.zone,
+                    department: member.department,
+                    role: member.role,
+                    timestamp: new Date().toISOString()
+                }));
+                
+                showNotification(`Welcome ${member.name}!`, "success");
+                return true;
+            } catch (error) {
+                console.error("Login error:", error);
+                showNotification("Login failed", "error");
+                return false;
+            }
+        }
+        
+        // Handle team login
+        async function handleTeamLogin() {
+            const email = document.getElementById('teamEmail').value.trim();
+            const password = document.getElementById('teamPassword').value;
+            
+            const success = await teamLogin(email, password);
+            if (success) {
+                const member = teamMembers[email.toLowerCase()];
+                showTeamDashboard(member.name, member.zone);
+            }
+        }
+        
+        // Show team dashboard
+        function showTeamDashboard(userName, userZone) {
+            console.log("Showing team dashboard for:", userName);
+            
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('teamDashboard').classList.remove('hidden');
+            document.getElementById('userName').textContent = userName;
+            document.getElementById('userZone').textContent = userZone;
+            
+            // Initialize current user
+            const savedUser = JSON.parse(localStorage.getItem('greenfield_user'));
+            if (savedUser) {
+                window.currentUser = savedUser.name;
+                window.currentUserEmail = savedUser.email;
+                window.isAdmin = false;
+                console.log("Team user initialized:", currentUser, currentUserEmail, isAdmin);
+            }
+            
+            // Render initial tasks
+            renderTeamTasks();
+        }
+        
+        // Submit new task
+        async function submitNewTask() {
+            const description = document.getElementById('taskDescription').value.trim();
+            const zone = document.getElementById('taskZone').value;
+            const photoFile = document.getElementById('taskPhoto').files[0] || null;
+            
+            if (!description || !zone || zone === "") {
+                showNotification("Please fill description and select a zone", "error");
+                return;
+            }
+            
+            // Disable button to prevent double click
+            const submitBtn = document.getElementById('submitTaskBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SUBMITTING...';
+            
+            try {
+                const success = await addTask(description, zone, photoFile);
+                
+                if (success) {
+                    // Clear form
+                    document.getElementById('taskDescription').value = '';
+                    document.getElementById('taskZone').selectedIndex = 0;
+                    document.getElementById('taskPhoto').value = '';
+                    document.getElementById('photoPreview').innerHTML = '';
+                    
+                    // Show success message
+                    showNotification("Task submitted for approval!", "success");
+                    
+                    // Task list will update automatically via realtime listener
+                }
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> SUBMIT TASK';
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            currentUser = null;
+            currentUserEmail = "";
+            isAdmin = false;
+            localStorage.removeItem('greenfield_user');
+            window.location.href = 'index.html';
+        }
+        
+        // Render tasks for team members - ENHANCED VERSION
+        function renderTeamTasks() {
+            console.log("renderTeamTasks called");
+            
+            const assignedTaskList = document.getElementById('assignedTaskList');
+            const readyToCompleteList = document.getElementById('readyToCompleteList');
+            const pendingTaskList = document.getElementById('pendingTaskList');
+            const completedTaskList = document.getElementById('completedTaskList');
+            const allTaskList = document.getElementById('allTaskList');
+            
+            // Get all tasks
+            const allTasks = Object.entries(tasks || {});
+            console.log("Total tasks found:", allTasks.length);
+            
+            // Get current user data
+            const savedUser = JSON.parse(localStorage.getItem('greenfield_user') || '{}');
+            const userEmail = savedUser.email || currentUserEmail;
+            const userName = savedUser.name || currentUser;
+            
+            console.log("Current user:", { userEmail, userName });
+            
+            // 1. Tasks assigned to me (includes all statuses except completed)
+            const assignedTasks = allTasks.filter(([taskId, task]) => {
+                const isAssigned = task.assigned_to === userEmail || 
+                                 task.assigned_to === currentUser ||
+                                 task.assigned_to === userName;
+                return isAssigned && task.status !== 'completed';
+            }).sort((a, b) => new Date(b[1].assigned_at || b[1].requested_at) - new Date(a[1].assigned_at || a[1].requested_at));
+            
+            // 2. Tasks ready to complete (approved and assigned to me or created by me)
+            const readyToCompleteTasks = allTasks.filter(([taskId, task]) => {
+                const isAssigned = task.assigned_to === userEmail || 
+                                 task.assigned_to === currentUser ||
+                                 task.assigned_to === userName;
+                const createdByMe = task.requested_by === userEmail;
+                return task.status === 'approved' && (isAssigned || createdByMe);
+            }).sort((a, b) => new Date(b[1].approved_at || b[1].requested_at) - new Date(a[1].approved_at || a[1].requested_at));
+            
+            // 3. Pending approval tasks (created by this user, status: pending)
+            const pendingTasks = allTasks.filter(([taskId, task]) => {
+                return task.requested_by === userEmail && 
+                       task.status === 'pending';
+            }).sort((a, b) => new Date(b[1].requested_at) - new Date(a[1].requested_at));
+            
+            // 4. My completed tasks
+            const completedTasks = allTasks.filter(([taskId, task]) => {
+                const isAssigned = task.assigned_to === userEmail || 
+                                 task.assigned_to === currentUser ||
+                                 task.assigned_to === userName;
+                const createdByMe = task.requested_by === userEmail;
+                return task.status === 'completed' && (isAssigned || createdByMe);
+            }).sort((a, b) => new Date(b[1].completed_at || b[1].requested_at) - new Date(a[1].completed_at || a[1].requested_at));
+            
+            // 5. All my tasks (created by me)
+            const myAllTasks = allTasks.filter(([taskId, task]) => {
+                return task.requested_by === userEmail;
+            }).sort((a, b) => new Date(b[1].requested_at) - new Date(a[1].requested_at));
+            
+            console.log("Task counts:", {
+                assigned: assignedTasks.length,
+                readyToComplete: readyToCompleteTasks.length,
+                pending: pendingTasks.length,
+                completed: completedTasks.length,
+                all: myAllTasks.length
+            });
+            
+            // Render assigned tasks
+            if (assignedTasks.length === 0) {
+                assignedTaskList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-user-check" style="font-size: 2rem; color: #1565c0; margin-bottom: 10px;"></i>
+                        <p>No tasks assigned to you</p>
+                    </div>
+                `;
+            } else {
+                assignedTaskList.innerHTML = renderTaskCards(assignedTasks, 'assigned');
+            }
+            
+            // Render ready to complete tasks
+            if (readyToCompleteTasks.length === 0) {
+                readyToCompleteList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; color: #2e7d32; margin-bottom: 10px;"></i>
+                        <p>No tasks ready to complete</p>
+                        <p style="font-size: 0.9rem; color: #888;">Tasks will appear here after approval</p>
+                    </div>
+                `;
+            } else {
+                readyToCompleteList.innerHTML = renderTaskCards(readyToCompleteTasks, 'ready');
+            }
+            
+            // Render pending tasks
+            if (pendingTasks.length === 0) {
+                pendingTaskList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; color: #4caf50; margin-bottom: 10px;"></i>
+                        <p>No tasks pending approval</p>
+                    </div>
+                `;
+            } else {
+                pendingTaskList.innerHTML = renderTaskCards(pendingTasks, 'pending');
+            }
+            
+            // Render completed tasks
+            if (completedTasks.length === 0) {
+                completedTaskList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-flag-checkered" style="font-size: 2rem; color: #1565c0; margin-bottom: 10px;"></i>
+                        <p>No completed tasks yet</p>
+                    </div>
+                `;
+            } else {
+                completedTaskList.innerHTML = renderTaskCards(completedTasks, 'completed');
+            }
+            
+            // Render all my tasks
+            if (myAllTasks.length === 0) {
+                allTaskList.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #666;">
+                        <i class="fas fa-clipboard-list" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>You haven't created any tasks yet</p>
+                    </div>
+                `;
+            } else {
+                allTaskList.innerHTML = renderTaskCards(myAllTasks, 'all');
+            }
+            
+            // Update task counts
+            document.getElementById('assignedCount').textContent = assignedTasks.length;
+            document.getElementById('readyToCompleteCount').textContent = readyToCompleteTasks.length;
+            document.getElementById('pendingCount').textContent = pendingTasks.length;
+            document.getElementById('completedTaskCount').textContent = completedTasks.length;
+            document.getElementById('allTaskCount').textContent = myAllTasks.length;
+        }
+        
+        // Helper function to render task cards - ENHANCED VERSION
+        function renderTaskCards(taskArray, listType = 'all') {
+            console.log("renderTaskCards called with", taskArray.length, "tasks, type:", listType);
+            
+            let html = '';
+            
+            taskArray.forEach(([taskId, task]) => {
+                const status = task.status || 'pending';
+                const isUrgent = task.is_urgent;
+                const isAssigned = task.assigned_to;
+                
+                // Get current user data
+                const savedUser = JSON.parse(localStorage.getItem('greenfield_user') || '{}');
+                const userEmail = savedUser.email || currentUserEmail;
+                const userName = savedUser.name || currentUser;
+                
+                // Format dates
+                const taskDate = task.requested_at ? 
+                    new Date(task.requested_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Date not set';
+                
+                const approvedDate = task.approved_at ? 
+                    new Date(task.approved_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : null;
+                
+                const assignedDate = task.assigned_at ? 
+                    new Date(task.assigned_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : null;
+                
+                const completedDate = task.completed_at ? 
+                    new Date(task.completed_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : null;
+                
+                // Check if current user can mark this task as completed
+                const canComplete = (task.requested_by === userEmail || 
+                                   task.assigned_to === userEmail ||
+                                   task.assigned_to === currentUser ||
+                                   task.assigned_to === userName) && 
+                                   status === 'approved';
+                
+                console.log("Task", taskId, "canComplete:", canComplete, "status:", status);
+                
+                html += `
+                    <div class="task-card ${status === 'pending' ? 'pending-approval' : status === 'completed' ? 'completed-task' : ''}" 
+                         style="margin-bottom: 15px; ${status === 'completed' ? 'border-left: 5px solid #1565c0; background: #e3f2fd;' : ''}">
+                        <div class="task-meta">
+                            <div>
+                                <span class="status-badge status-${status.charAt(0).toUpperCase() + status.slice(1)}">
+                                    <i class="fas fa-${getStatusIcon(status)}"></i> ${status.toUpperCase()}
+                                </span>
+                                ${isUrgent ? '<span class="priority-badge priority-urgent"><i class="fas fa-exclamation-triangle"></i> URGENT</span>' : ''}
+                                <strong>${task.zone || 'No Zone'}</strong>
+                            </div>
+                            <small>${taskDate}</small>
+                        </div>
+                        
+                        ${task.title ? `<h4 style="color: #1b5e20; margin-bottom: 10px;">${task.title}</h4>` : ''}
+                        
+                        <p style="margin: 10px 0;">${task.description || 'No description'}</p>
+                        
+                        <div style="margin: 10px 0; font-size: 14px; color: #666;">
+                            <div><i class="fas fa-user"></i> <strong>Requested by:</strong> ${task.requested_by_name || task.requested_by || 'Unknown'}</div>
+                            ${isAssigned ? `<div><i class="fas fa-user-check"></i> <strong>Assigned to:</strong> ${task.assigned_to}</div>` : ''}
+                            ${task.assigned_by ? `<div><i class="fas fa-user-tie"></i> <strong>Assigned by:</strong> ${task.assigned_by}</div>` : ''}
+                            ${assignedDate ? `<div><i class="fas fa-calendar-check"></i> <strong>Assigned on:</strong> ${assignedDate}</div>` : ''}
+                            ${approvedDate ? `<div><i class="fas fa-check-circle"></i> <strong>Approved on:</strong> ${approvedDate}</div>` : ''}
+                            ${task.approved_by ? `<div><i class="fas fa-user-shield"></i> <strong>Approved by:</strong> ${task.approved_by}</div>` : ''}
+                        </div>
+                        
+                        ${status === 'completed' && task.completed_by ? `
+                            <div class="completed-details">
+                                <div style="display: flex; align-items: center; gap: 10px; color: #1565c0;">
+                                    <i class="fas fa-flag-checkered" style="font-size: 1.2rem;"></i>
+                                    <div>
+                                        <strong style="font-size: 15px;">✓ TASK COMPLETED</strong>
+                                        <div style="font-size: 13px; margin-top: 3px;">
+                                            <strong>Completed by:</strong> ${task.completed_by}
+                                        </div>
+                                        <div style="font-size: 13px; margin-top: 2px;">
+                                            <strong>Completed on:</strong> ${completedDate || task.completed_date || 'Date not set'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${task.photoBase64 ? `
+                            <div style="margin: 10px 0;">
+                                <p style="font-size: 14px; color: #666; margin-bottom: 5px;">
+                                    <i class="fas fa-camera"></i> Photo attached
+                                </p>
+                                <img src="${task.photoBase64}" alt="Task photo" 
+                                     style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;"
+                                     onclick="openPhotoModal('${task.photoBase64}')">
+                            </div>
+                        ` : ''}
+                        
+                        <div class="task-actions">
+                            ${listType === 'pending' && status === 'pending' ? `
+                                <button class="btn small red" onclick="cancelTask('${taskId}')">
+                                    <i class="fas fa-times"></i> Cancel Request
+                                </button>
+                            ` : ''}
+                            
+                            ${canComplete && listType === 'ready' ? `
+                                <button class="btn submit" onclick="markTaskCompleteForTeam('${taskId}')" 
+                                        style="padding: 12px 25px; font-size: 15px; font-weight: bold;">
+                                    <i class="fas fa-check-circle"></i> MARK TASK COMPLETE
+                                </button>
+                                <button class="btn small blue" onclick="showTaskDetails('${taskId}')">
+                                    <i class="fas fa-info-circle"></i> View Details
+                                </button>
+                            ` : ''}
+                            
+                            ${status === 'completed' ? `
+                                <div class="completed-badge">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>TASK COMPLETED</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        // Get icon for status
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'pending': return 'clock';
+                case 'approved': return 'check-circle';
+                case 'completed': return 'flag-checkered';
+                case 'cancelled': return 'times-circle';
+                case 'rejected': return 'times-circle';
+                default: return 'question-circle';
+            }
+        }
+        
+        // Cancel task
+        async function cancelTask(taskId) {
+            if (!confirm('Are you sure you want to cancel this task request?')) return;
+            
+            try {
+                await updateTaskStatus(taskId, 'cancelled');
+            } catch (error) {
+                console.error('Error cancelling task:', error);
+            }
+        }
+        
+        // Show task details
+        function showTaskDetails(taskId) {
+            const task = tasks[taskId];
+            if (!task) {
+                showNotification("Task not found", "error");
+                return;
+            }
+            
+            const details = `
+                Task Details:
+                
+                Zone: ${task.zone || 'Not specified'}
+                Status: ${task.status || 'pending'}
+                Description: ${task.description || 'No description'}
+                
+                Requested by: ${task.requested_by_name || task.requested_by}
+                Requested on: ${new Date(task.requested_at).toLocaleString()}
+                
+                ${task.approved_by ? `Approved by: ${task.approved_by}` : ''}
+                ${task.approved_at ? `Approved on: ${new Date(task.approved_at).toLocaleString()}` : ''}
+                
+                ${task.assigned_to ? `Assigned to: ${task.assigned_to}` : ''}
+                ${task.assigned_by ? `Assigned by: ${task.assigned_by}` : ''}
+                ${task.assigned_at ? `Assigned on: ${new Date(task.assigned_at).toLocaleString()}` : ''}
+                
+                Priority: ${task.priority || 'normal'}
+                ${task.is_urgent ? '⚠️ URGENT TASK' : ''}
+                
+                Click "Mark Task Complete" when you have finished this task.
+            `;
+            
+            alert(details);
+        }
+        
+        // Make functions available globally
+        window.logout = logout;
+        window.togglePassword = togglePassword;
+        window.cancelTask = cancelTask;
+        window.showTaskDetails = showTaskDetails;
+        window.renderTeamTasks = renderTeamTasks;
+    </script>
+</body>
+</html>
